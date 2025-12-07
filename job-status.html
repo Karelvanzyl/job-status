@@ -10,39 +10,21 @@
   <div id="app" class="max-w-2xl mx-auto py-8"></div>
 
   <script>
-    // IMPORTANT: REPLACE THESE WITH YOUR BASE44 APP DETAILS
-    // Find these in your Base44 dashboard -> Settings
-    const BASE44_APP_ID = 'tap-tap-jobcards-a68f9894.base44.app';  // e.g., 'abc123'
-    const BASE44_OWNER = 'karelvanzyl001@gmail.com';     // Your Base44 account email
-    const BASE44_API = `https://api.base44.com/v1/apps/${BASE44_APP_ID}/entities`;
+    // IMPORTANT: REPLACE WITH YOUR BASE44 APP SUBDOMAIN
+    const BASE44_APP_URL = 'https://tap-tap-jobcards-a68f9894.base44.app';
 
     async function fetchJobStatus(token) {
       try {
-        const response = await fetch(`${BASE44_API}/PublicJobStatus?share_token=${token}`, {
-          headers: {
-            'X-App-Owner': BASE44_OWNER
-          }
-        });
-        
-        if (!response.ok) throw new Error('Job not found');
+        const response = await fetch(`${BASE44_APP_URL}/api/getJobStatus?token=${token}`);
         const data = await response.json();
-        return data.length > 0 ? data[0] : null;
+        
+        if (!data.success) {
+          throw new Error(data.error || 'Job not found');
+        }
+        
+        return { job: data.job, business: data.business };
       } catch (error) {
         console.error('Error:', error);
-        return null;
-      }
-    }
-
-    async function fetchSettings() {
-      try {
-        const response = await fetch(`${BASE44_API}/AppSettings?setting_key=business_info`, {
-          headers: {
-            'X-App-Owner': BASE44_OWNER
-          }
-        });
-        const data = await response.json();
-        return data.length > 0 ? data[0].setting_value : null;
-      } catch (error) {
         return null;
       }
     }
@@ -213,12 +195,9 @@
         </div>
       `;
 
-      const [job, settings] = await Promise.all([
-        fetchJobStatus(token),
-        fetchSettings()
-      ]);
+      const result = await fetchJobStatus(token);
 
-      if (!job) {
+      if (!result || !result.job) {
         app.innerHTML = `
           <div class="bg-white rounded-2xl shadow-xl p-8 text-center">
             <svg class="w-12 h-12 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -231,13 +210,13 @@
         return;
       }
 
-      app.innerHTML = renderJobStatus(job, settings);
+      app.innerHTML = renderJobStatus(result.job, result.business);
 
       // Refresh every 30 seconds
       setInterval(async () => {
-        const updatedJob = await fetchJobStatus(token);
-        if (updatedJob) {
-          app.innerHTML = renderJobStatus(updatedJob, settings);
+        const updated = await fetchJobStatus(token);
+        if (updated && updated.job) {
+          app.innerHTML = renderJobStatus(updated.job, updated.business);
         }
       }, 30000);
     }
