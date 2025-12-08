@@ -10,12 +10,12 @@
   <div id="app" class="max-w-2xl mx-auto py-8"></div>
 
   <script>
-    // IMPORTANT: REPLACE WITH YOUR BASE44 APP SUBDOMAIN
     const BASE44_APP_URL = 'https://tap-tap-jobcards-a68f9894.base44.app';
 
     async function fetchJobStatus(token) {
       try {
-        const response = await fetch(`${BASE44_APP_URL}/api/getJobStatus?token=${token}`);
+        // CORRECTED: Use /functions/ not /api/
+        const response = await fetch(`${BASE44_APP_URL}/functions/getJobStatus?token=${token}`);
         const data = await response.json();
         
         if (!data.success) {
